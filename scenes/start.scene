@@ -1,0 +1,10 @@
+ID: start
+BG: assets/bg_start.png
+
+TEXT:
+快开始你的nku之旅吧！
+ENDTEXT
+
+CHOICE:
+ START|1.1
+ENDCHOICE

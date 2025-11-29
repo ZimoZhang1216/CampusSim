@@ -1,0 +1,8 @@
+[
+{
+  "directory": "/Users/zhangzimo/Desktop/CampusSim/build",
+  "command": "/usr/bin/c++  -isystem /opt/homebrew/include -std=gnu++17 -arch arm64 -o CMakeFiles/campus_sim.dir/src/main.cpp.o -c /Users/zhangzimo/Desktop/CampusSim/src/main.cpp",
+  "file": "/Users/zhangzimo/Desktop/CampusSim/src/main.cpp",
+  "output": "CMakeFiles/campus_sim.dir/src/main.cpp.o"
+}
+]

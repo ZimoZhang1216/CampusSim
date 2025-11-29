@@ -1,0 +1,14 @@
+ID: 1.1
+BG: assets/bg_start.png
+
+TEXT:
+欢迎来到984.5
+终于上岸，回望前半生：
+来到nku是因为？
+ENDTEXT
+
+CHOICE:
+高考失利|1.2
+性价比最高|1.2
+超常发挥|1.2
+ENDCHOICE

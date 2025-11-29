@@ -1,0 +1,12 @@
+ID: example
+BG: assets/start.png
+
+TEXT:
+欢迎来到模拟NKU的开端。
+今天，你站在南开大学的校门口，准备开始新的校园生活。
+ENDTEXT
+
+CHOICE:
+走进校园                     | 体质=0,学力=0,人脉=1,名誉=1           | campus_intro |
+先四处看看再进去             | 经验=1,社会实践=1                    | campus_walk  |
+ENDCHOICE
