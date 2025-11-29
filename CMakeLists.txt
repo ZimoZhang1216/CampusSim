@@ -4,7 +4,7 @@ project(CampusSim LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# 这里假设你用的是 SFML 3，如果你在 Windows 上用的是 SFML 2，需要对应调整 find_package 和链接名字
+# SFML 3
 find_package(SFML 3 COMPONENTS Graphics Window System CONFIG REQUIRED)
 
 add_executable(CampusSim
@@ -17,9 +17,12 @@ target_link_libraries(CampusSim PRIVATE
     sfml-system
 )
 
-# 安装：把 exe 安装到根目录，把资源目录一起装进去
+# ------------- 安装规则（Windows 打包用）-------------
+
+# 把 exe 安装到包根目录
 install(TARGETS CampusSim
         RUNTIME DESTINATION .)
 
+# 把资源目录（assets、scenes）一起打进发布包
 install(DIRECTORY assets scenes
         DESTINATION .)
