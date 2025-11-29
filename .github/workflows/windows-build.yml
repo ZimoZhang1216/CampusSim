@@ -24,24 +24,32 @@ jobs:
       - name: Configure CMake
         shell: pwsh
         run: |
-          cmake -S . -B build `
-            -DCMAKE_BUILD_TYPE=Release `
-            -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake" `
-            -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}\install"
+          cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows
 
       - name: Build
         shell: pwsh
-        run: cmake --build build --config Release
+        run: |
+          cmake --build build --config Release
 
       - name: Install
         shell: pwsh
-        run: cmake --build build --config Release --target install
+        run: |
+          cmake --install build --config Release --prefix install
 
       - name: Prepare package folder
         shell: pwsh
         run: |
           mkdir CampusSim-win
+
+          # 拷贝 exe + 资源（install）
           xcopy /E /I /Y install\* CampusSim-win\
+
+          # 拷贝所有 SFML DLL
+          $binDir = "${{ github.workspace }}\vcpkg\installed\x64-windows\bin"
+          if (Test-Path $binDir) {
+            Copy-Item "$binDir\sfml-*.dll" -Destination "CampusSim-win" -Force -ErrorAction SilentlyContinue
+            Copy-Item "$binDir\openal32.dll" -Destination "CampusSim-win" -Force -ErrorAction SilentlyContinue
+          }
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
