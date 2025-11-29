@@ -4,8 +4,8 @@ project(CampusSim LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# 找 SFML（不强制版本），同时兼容 SFML2 / SFML3
-find_package(SFML COMPONENTS graphics window system REQUIRED)
+# 找 SFML（组件名首字母要大写：Graphics / Window / System）
+find_package(SFML COMPONENTS Graphics Window System REQUIRED)
 
 add_executable(CampusSim
     src/main.cpp
