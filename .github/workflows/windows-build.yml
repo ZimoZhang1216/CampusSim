@@ -13,6 +13,49 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install vcpkg and SFML
+        run: |
+          git clone https://github.com/microsoft/vcpkg.git
+          .\vcpkg\bootstrap-vcpkg.bat
+          .\vcpkg\vcpkg.exe install sfml:x64-windows
+
+      - name: Configure CMake
+        run: >
+          cmake -S . -B build
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake
+          -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}\install
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Install
+        run: cmake --build build --config Release --target install
+
+      - name: Prepare package folder
+        run: |
+          mkdir CampusSim-win
+          xcopy /E /I /Y install\* CampusSim-win\
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CampusSim-win
+          path: CampusSim-winname: Windows Build
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       # 用 vcpkg 自动装 SFML
       - name: Install vcpkg and SFML
         uses: lukka/run-vcpkg@v11
