@@ -1,0 +1,12 @@
+ID: 1.3
+BG: assets/bg_start.png
+
+
+TEXT:
+你是否取得过奥赛奖项：
+ENDTEXT
+
+CHOICE:
+是                    | 学力=+2           | 1.4
+否             |  学力=+0                  | 1.4
+ENDCHOICE
