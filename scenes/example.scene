@@ -7,6 +7,7 @@ TEXT:
 ENDTEXT
 
 CHOICE:
-走进校园                     | 体质=0,学力=0,人脉=1,名誉=1           | campus_intro |
-先四处看看再进去             | 经验=1,社会实践=1                    | campus_walk  |
+去教室认真上课   | study=+1         | in_class_morning   | join_study   | 0
+去食堂吃早饭     | physique=+1      | canteen_morning    | 0            | 0
+去参加科研说明会 | experience=+1    | research_intro     | join_research| research_invite
 ENDCHOICE

@@ -5,7 +5,7 @@
             "name": "Run CampusSim",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/campus_sim",
+            "program": "${workspaceFolder}/build/CampusSim",
             "cwd": "${workspaceFolder}",
             "preLaunchTask": "build with cmake",
             "MIMode": "lldb"

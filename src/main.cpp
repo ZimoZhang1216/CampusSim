@@ -7,6 +7,7 @@
 #include <sstream>
 #include <filesystem>
 #include <cctype>
+#include <cmath>
 
 namespace CampusSim {
 
@@ -18,7 +19,7 @@ namespace CampusSim {
         int network         = 0;  // 人脉
         int reputation      = 0;  // 名誉
         int experience      = 0;  // 经验
-        int publicPractice  = 0;  // 公能实践
+        int GongnengLecture = 0;  // 公能讲座
         int volunteer       = 0;  // 志愿服务
         int socialPractice  = 0;  // 社会实践
     };
@@ -30,16 +31,21 @@ namespace CampusSim {
 
     struct Choice {
         std::string text;                   // 选项文字（UTF-8）
-        int dPhysique       = 0;            // 体质 变化
-        int dStudy          = 0;            // 学力 变化
-        int dNetwork        = 0;            // 人脉 变化
-        int dReputation     = 0;            // 名誉 变化
-        int dExperience     = 0;            // 经验 变化
-        int dPublicPractice = 0;            // 公能实践 变化
-        int dVolunteer      = 0;            // 志愿服务 变化
-        int dSocialPractice = 0;            // 社会实践 变化
+        int dPhysique        = 0;           // 体质 变化
+        int dStudy           = 0;           // 学力 变化
+        int dNetwork         = 0;           // 人脉 变化
+        int dReputation      = 0;           // 名誉 变化
+        int dExperience      = 0;           // 经验 变化
+        int dGongnengLecture = 0;           // 公能讲座 变化
+        int dVolunteer       = 0;           // 志愿服务 变化
+        int dSocialPractice  = 0;           // 社会实践 变化
         std::string nextSceneId;            // 下一个场景 ID
         std::vector<std::string> setFlags;  // 选了这个选项要打的 flag
+        std::vector<std::string> requiredFlags;  // 显示该选项所需为 true 的 flags（全部满足才显示）
+
+        bool  timed          = false;  // 是否为限时选项（FLAGS 中包含 timedXX）
+        float timeLimit      = 0.f;    // 限时总时长（秒）
+        float remainingTime  = 0.f;    // 当前剩余时间（秒）
     };
 
     struct Scene {
@@ -79,7 +85,7 @@ namespace CampusSim {
         return result;
     }
 
-    // DELTA 字段：例如 "energy=-1,mood=+2,grade=0" 或 "精力=-1,心情=+2,成绩=0"
+    // DELTA 字段：例如 "体质=-1,学力=+2" / "physique=-1,study=+2"
     void parseDelta(const std::string& s, Choice& choice) {
         if (s.empty()) return;
         auto items = split(s, ',');
@@ -95,7 +101,6 @@ namespace CampusSim {
                 continue;
             }
 
-            // 支持中文字段名和简单英文缩写
             if (key == "physique" || key == "体质" || key == "P") {
                 choice.dPhysique += value;
             } else if (key == "study" || key == "学力" || key == "X") {
@@ -106,8 +111,8 @@ namespace CampusSim {
                 choice.dReputation += value;
             } else if (key == "experience" || key == "经验" || key == "J") {
                 choice.dExperience += value;
-            } else if (key == "public" || key == "公能实践" || key == "G") {
-                choice.dPublicPractice += value;
+            } else if (key == "public" || key == "公能讲座" || key == "G") {
+                choice.dGongnengLecture += value;
             } else if (key == "volunteer" || key == "志愿服务" || key == "Z") {
                 choice.dVolunteer += value;
             } else if (key == "social" || key == "社会实践" || key == "S") {
@@ -116,26 +121,49 @@ namespace CampusSim {
         }
     }
 
-    // FLAGS 字段：例如 "join_union,oversleep"
+    // FLAGS 字段：例如 "join_union,oversleep,timed10"
     void parseFlags(const std::string& s, Choice& choice) {
         if (s.empty()) return;
+        if (s == "0") return;  // 0 作为占位符表示“没有 flags”
+
         auto items = split(s, ',');
         for (auto& item : items) {
-            if (!item.empty()) {
-                choice.setFlags.push_back(item);
+            if (item.empty() || item == "0") continue;
+
+            // 特殊语法：timed10 / timed5 / timed30 …… 表示限时选项
+            // 规则：以 "timed" 开头，后面必须是纯数字，才视为限时关键词
+            if (item.rfind("timed", 0) == 0 && item.size() > 5) {
+                try {
+                    int seconds = std::stoi(item.substr(5));
+                    if (seconds > 0) {
+                        choice.timed         = true;
+                        choice.timeLimit     = static_cast<float>(seconds);
+                        choice.remainingTime = choice.timeLimit;
+                    }
+                } catch (...) {
+                    // 转数字失败就忽略限时配置，不影响其他 flag
+                }
+                continue;  // 不把 timedXX 当成普通 flag 记录
+            }
+
+            // 其他全部作为普通 flag 记录
+            choice.setFlags.push_back(item);
+        }
+    }
+
+    // REQUIRES 字段：例如 "research_invite,join_union"
+    void parseRequiredFlags(const std::string& s, Choice& choice) {
+        if (s.empty()) return;
+        if (s == "0") return; // 0 作为占位符时视为“无条件”
+        auto items = split(s, ',');
+        for (auto& item : items) {
+            if (!item.empty() && item != "0") {
+                choice.requiredFlags.push_back(item);
             }
         }
     }
 
-    // 新的选项格式（不再在文本里写数值）：
-    //
-    // CHOICE:
-    // 去教室认真上课   | energy=-1,mood=0,grade=+2 | classroom   | join_study
-    // 去食堂吃早饭     | energy=+1,mood=+2,grade=-1 | canteen     |
-    // 回宿舍再睡一会儿 | energy=+3,mood=+1,grade=-2 | dorm_morning| oversleep
-    // ENDCHOICE
-    //
-    // 一行： 文本 | DELTA | NEXT | FLAGS
+    // 新的选项格式：支持最多5列，最后一列为 REQUIRES
     void parseChoiceDefinition(const std::string& line, Scene& scene) {
         if (line.empty()) return;
 
@@ -150,6 +178,7 @@ namespace CampusSim {
         std::string deltaStr;
         std::string nextId;
         std::string flagsStr;
+        std::string requiresStr;
 
         if (parts.size() == 2) {
             // 文本 | NEXT
@@ -158,16 +187,23 @@ namespace CampusSim {
             // 文本 | DELTA | NEXT
             deltaStr = parts[1];
             nextId   = parts[2];
-        } else {
+        } else if (parts.size() == 4) {
             // 文本 | DELTA | NEXT | FLAGS
             deltaStr = parts[1];
             nextId   = parts[2];
             flagsStr = parts[3];
+        } else { // parts.size() >= 5
+            // 文本 | DELTA | NEXT | FLAGS | REQUIRES
+            deltaStr    = parts[1];
+            nextId      = parts[2];
+            flagsStr    = parts[3];
+            requiresStr = parts[4];
         }
 
         choice.nextSceneId = trim(nextId);
         parseDelta(deltaStr, choice);
         parseFlags(flagsStr, choice);
+        parseRequiredFlags(requiresStr, choice);
 
         scene.choices.push_back(choice);
     }
@@ -177,7 +213,6 @@ namespace CampusSim {
                                const sf::Font& font,
                                unsigned int characterSize,
                                float maxWidth) {
-        // SFML 3: Text 需要传 font
         sf::Text measure(font, "", characterSize);
 
         sf::String result;
@@ -186,7 +221,6 @@ namespace CampusSim {
         for (std::size_t i = 0; i < input.getSize(); ++i) {
             auto ch = input[i];
 
-            // 保留原有换行：遇到 '\n' 就强制换行
             if (ch == '\n') {
                 result += currentLine;
                 result += '\n';
@@ -199,10 +233,9 @@ namespace CampusSim {
 
             measure.setString(testLine);
             auto bounds = measure.getLocalBounds();
-            float width = bounds.size.x;  // SFML 3: 使用 size.x
+            float width = bounds.size.x;
 
             if (width > maxWidth && !currentLine.isEmpty()) {
-                // 超出宽度：先把当前行放入结果，再重新开始一行
                 result += currentLine;
                 result += '\n';
                 currentLine.clear();
@@ -328,20 +361,17 @@ namespace CampusSim {
         return scenes;
     }
 
-    // 根据 flag 对“目标场景 ID”做重定向（你可以自己在这里写分支逻辑）
+    // 根据 flag 对“目标场景 ID”做重定向
     std::string resolveSceneId(const std::string& rawId,
                                const std::map<std::string, bool>& flags) {
-        // 示例：晚上的宿舍，根据是否加入学生会分两种剧情
         if (rawId == "dorm_evening") {
             auto it = flags.find("join_union");
             if (it != flags.end() && it->second) {
-                return "dorm_evening_after_union";   // 加入学生会版
+                return "dorm_evening_after_union";
             } else {
-                return "dorm_evening_normal";        // 普通版
+                return "dorm_evening_normal";
             }
         }
-
-        // 默认：不做重定向
         return rawId;
     }
 
@@ -349,12 +379,11 @@ namespace CampusSim {
 
     void run() {
         sf::RenderWindow window(
-        sf::VideoMode(sf::Vector2u{1100u, 700u}),
-        "Campus Simulator - New Script Format"
+            sf::VideoMode(sf::Vector2u{1100u, 700u}),
+            "Campus Simulator - New Script Format"
         );
         window.setFramerateLimit(60);
 
-        // 字体：你已经把 NotoSansSC 或 Hiragino Sans GB 拷到这个路径了
         sf::Font font;
         if (!font.openFromFile("assets/NotoSansSC-Regular.otf")) {
             std::cerr << "无法加载字体 assets/NotoSansSC-Regular.otf\n";
@@ -376,6 +405,19 @@ namespace CampusSim {
         Scene* currentScene = &scenes[currentSceneId];
 
         GameState game;  // 属性 + flags
+
+        // 用于计算每一帧时间差的时钟
+        sf::Clock frameClock;
+
+        // 进入一个新场景时，重置该场景所有限时选项的计时器
+        auto resetChoiceTimers = [&]() {
+            if (!currentScene) return;
+            for (auto& ch : currentScene->choices) {
+                if (ch.timed) {
+                    ch.remainingTime = ch.timeLimit;
+                }
+            }
+        };
 
         // 背景图
         sf::Texture backgroundTexture;
@@ -399,12 +441,13 @@ namespace CampusSim {
         };
 
         loadBackgroundForCurrentScene();
+        resetChoiceTimers();
 
         // 对话框背景
         sf::RectangleShape dialogBox;
         dialogBox.setSize({
             static_cast<float>(window.getSize().x) - 80.f,
-            310.f   // 增加对话框高度，避免TEXT和选项挤在一起
+            310.f
         });
         dialogBox.setPosition({40.f, 330.f});
         dialogBox.setFillColor(sf::Color(0, 0, 80, 200));
@@ -412,10 +455,6 @@ namespace CampusSim {
         // 对话文字
         sf::Text dialogueText(font, "", 20);
         dialogueText.setFillColor(sf::Color::White);
-        dialogueText.setPosition({
-            dialogBox.getPosition().x + 20.f,
-            dialogBox.getPosition().y + 15.f   // 稍微上移一些
-        });
 
         // 选项文字（最多 8 个）
         std::vector<sf::Text> choiceTexts;
@@ -425,25 +464,21 @@ namespace CampusSim {
             t.setFillColor(sf::Color(230, 230, 210));
             choiceTexts.push_back(t);
         }
+        std::vector<std::size_t> visibleChoiceIndices;
 
         // 属性显示（左上角）
         sf::Text statsText(font, "", 18);
         statsText.setFillColor(sf::Color::Yellow);
-        // 初始位置先随便给一个值，真正的位置在 updateUI 里统一设置
         statsText.setPosition(sf::Vector2f{40.f, 40.f});
 
-        // 属性栏背景框（左上角一整条状态栏，更明显）
+        // 属性栏背景框（左上角）
         sf::RectangleShape statsBox;
-        // 深蓝色、比较不透明，这样和你的霓虹背景能拉开对比
         statsBox.setFillColor(sf::Color(0, 0, 60, 220));
-        // 边框稍微粗一点
         statsBox.setOutlineColor(sf::Color(255, 255, 255, 220));
         statsBox.setOutlineThickness(3.f);
 
         auto updateUI = [&]() {
-            // ---- 计算对话和选项文本，并根据内容自适应对话框大小 ----
-
-            // 1) 准备对话文本并测量高度
+            // ---- 文本和选项布局 ----
             const std::string& d = currentScene->dialogue;
             sf::String dlg = sf::String::fromUtf8(d.begin(), d.end());
 
@@ -456,7 +491,7 @@ namespace CampusSim {
 
             float dialogWidth = static_cast<float>(window.getSize().x)
                                 - dialogPaddingLeft - dialogPaddingRight;
-            float dialogMaxWidth = dialogWidth - 40.f; // 再预留一点内边距
+            float dialogMaxWidth = dialogWidth - 40.f;
 
             sf::String wrappedDlg = wrapTextToWidth(
                 dlg,
@@ -468,14 +503,46 @@ namespace CampusSim {
             auto dlgBounds = dialogueText.getLocalBounds();
             float dlgHeight = dlgBounds.size.y;
 
-            // 2) 准备选项文本，先全部 wrap 一遍并测量高度
+            // 1) 计算可见选项
+            visibleChoiceIndices.clear();
+            for (std::size_t i = 0; i < currentScene->choices.size(); ++i) {
+                const Choice& ch = currentScene->choices[i];
+                bool visible = true;
+
+                // REQUIRES：所有 requiredFlags 必须为 true
+                for (const auto& rf : ch.requiredFlags) {
+                    auto it = game.flags.find(rf);
+                    if (it == game.flags.end() || !it->second) {
+                        visible = false;
+                        break;
+                    }
+                }
+
+                // 限时选项：时间耗尽就不再显示
+                if (visible && ch.timed && ch.remainingTime <= 0.f) {
+                    visible = false;
+                }
+
+                if (visible) {
+                    visibleChoiceIndices.push_back(i);
+                }
+            }
+
+            // 2) 准备选项文本并测高度
             std::vector<float> choiceHeights(choiceTexts.size(), 0.f);
             float totalChoiceHeight = 0.f;
 
             for (std::size_t i = 0; i < choiceTexts.size(); ++i) {
-                if (i < currentScene->choices.size()) {
-                    const auto& ch = currentScene->choices[i];
+                if (i < visibleChoiceIndices.size()) {
+                    const auto& ch = currentScene->choices[visibleChoiceIndices[i]];
                     std::string lineUtf8 = std::to_string(i + 1) + ") " + ch.text;
+
+                    // 限时选项追加剩余时间（向上取整）
+                    if (ch.timed && ch.remainingTime > 0.f) {
+                        int seconds = static_cast<int>(std::ceil(ch.remainingTime));
+                        if (seconds < 0) seconds = 0;
+                        lineUtf8 += " (剩余" + std::to_string(seconds) + "秒)";
+                    }
 
                     sf::String line = sf::String::fromUtf8(lineUtf8.begin(), lineUtf8.end());
                     float choiceMaxWidth = dialogMaxWidth - 40.f;
@@ -496,32 +563,29 @@ namespace CampusSim {
                     choiceHeights[i] = 0.f;
                 }
             }
-            // 去掉最后一个多加的行距
             if (totalChoiceHeight > 0.f) {
                 totalChoiceHeight -= choiceLineSpacing;
             }
 
-            // 3) 根据对话高度 + 选项高度计算对话框高度，并贴到底部
+            // 3) 计算对话框高度，贴近底部
             float dialogHeight = dialogPaddingTop + dlgHeight;
             if (totalChoiceHeight > 0.f) {
                 dialogHeight += gapTextToChoice + totalChoiceHeight;
             }
             dialogHeight += dialogPaddingBottom;
 
-            // 将对话框的最小高度调为原来的三分之一
             float minDialogHeight = 60.f;
             if (dialogHeight < minDialogHeight) dialogHeight = minDialogHeight;
             float maxDialogHeight = static_cast<float>(window.getSize().y) * 0.6f;
             if (dialogHeight > maxDialogHeight) dialogHeight = maxDialogHeight;
 
             float dialogX = dialogPaddingLeft;
-            // 离底部留 40 像素
             float dialogY = static_cast<float>(window.getSize().y) - dialogHeight - 40.f;
 
             dialogBox.setPosition({dialogX, dialogY});
             dialogBox.setSize({dialogWidth, dialogHeight});
 
-            // 4) 布局对话文本和选项文本
+            // 对话文本位置
             dialogueText.setPosition({dialogX + 20.f, dialogY + dialogPaddingTop});
 
             float currentY = dialogueText.getPosition().y + dlgHeight
@@ -529,61 +593,72 @@ namespace CampusSim {
             float choiceX = dialogX + 40.f;
 
             for (std::size_t i = 0; i < choiceTexts.size(); ++i) {
-                if (i < currentScene->choices.size()) {
+                if (i < visibleChoiceIndices.size()) {
                     choiceTexts[i].setPosition({choiceX, currentY});
                     currentY += choiceHeights[i] + choiceLineSpacing;
                 }
             }
 
-            // 属性栏：第一行 5 项（含经验），第二行 3 项
+            // 4) 属性栏文字和背景
             std::string statsStr =
                 "体质: "       + std::to_string(game.stats.physique) +
                 "   学力: "     + std::to_string(game.stats.study) +
                 "   人脉: "     + std::to_string(game.stats.network) +
                 "   名誉: "     + std::to_string(game.stats.reputation) +
                 "   经验: "     + std::to_string(game.stats.experience) +
-                "\n公能实践: "  + std::to_string(game.stats.publicPractice) +
+                "\n公能讲座: "  + std::to_string(game.stats.GongnengLecture) +
                 "   志愿服务: " + std::to_string(game.stats.volunteer) +
                 "   社会实践: " + std::to_string(game.stats.socialPractice);
-            statsText.setString(
-                sf::String::fromUtf8(statsStr.begin(), statsStr.end())
-            );
 
-            // 固定左上角属性栏文字位置（稍微往下，避免贴着窗口边缘）
+            statsText.setString(sf::String::fromUtf8(statsStr.begin(), statsStr.end()));
             statsText.setPosition(sf::Vector2f{30.f, 40.f});
 
-            // 左上角整条状态栏背景
-            // 覆盖从左侧留一点边距到接近右侧的位置，高度给够一行半文字
             statsBox.setPosition(sf::Vector2f{20.f, 20.f});
-            statsBox.setSize({ 1060.f, 70.f });
+            statsBox.setSize({1060.f, 70.f});
         };
 
-        // 统一的选项命中检测：点击和悬停都用它
+        // 统一的选项命中检测
         auto hitTestChoice = [&](std::size_t idx, const sf::Vector2f& worldPos) -> bool {
-            if (idx >= currentScene->choices.size()) return false;
-
+            if (idx >= visibleChoiceIndices.size()) return false;
             const sf::String& str = choiceTexts[idx].getString();
             if (str.isEmpty()) return false;
 
             sf::FloatRect bounds = choiceTexts[idx].getGlobalBounds();
-            // SFML 3: FloatRect 使用 position/size 内部结构，但我们只需要 contains()
-            // 这里直接用文本自身的边界作为命中区域
             return bounds.contains(worldPos);
         };
 
+        // 先更新一次界面
         updateUI();
 
         int hoveredIndex = -1;  // 当前鼠标悬停的选项索引，-1 表示没有
 
         // 主循环
         while (window.isOpen()) {
+            // 本帧时间差（秒）
+            float dt = frameClock.restart().asSeconds();
+            if (dt < 0.f) dt = 0.f;
+            if (dt > 0.5f) dt = 0.5f;
+
+            // 更新限时选项的剩余时间
+            for (auto& ch : currentScene->choices) {
+                if (ch.timed && ch.remainingTime > 0.f) {
+                    ch.remainingTime -= dt;
+                    if (ch.remainingTime < 0.f) {
+                        ch.remainingTime = 0.f;
+                    }
+                }
+            }
+
+            // 根据最新的 remainingTime + flags 更新界面
+            updateUI();
+
             int chosenIndex = -1;
 
-            // 事件处理循环（兼容 C++17：不在 while 头部使用 init-statement）
+            // 事件处理循环（SFML 3 风格）
             while (true) {
                 auto event = window.pollEvent();
                 if (!event) {
-                    break; // 没有更多事件
+                    break;
                 }
 
                 if (event->is<sf::Event::Closed>()) {
@@ -605,14 +680,12 @@ namespace CampusSim {
                     }
                 }
 
-                // 鼠标左键点击选项：根据点击坐标判断点中了哪一条选项
+                // 鼠标左键点击选项
                 if (event->is<sf::Event::MouseButtonPressed>()) {
                     const auto* mb = event->getIf<sf::Event::MouseButtonPressed>();
                     if (mb && mb->button == sf::Mouse::Button::Left) {
-                        // 将像素坐标转成世界坐标（考虑视图变换）
                         sf::Vector2f worldPos = window.mapPixelToCoords(mb->position);
-
-                        for (std::size_t i = 0; i < choiceTexts.size(); ++i) {
+                        for (std::size_t i = 0; i < visibleChoiceIndices.size(); ++i) {
                             if (hitTestChoice(i, worldPos)) {
                                 chosenIndex = static_cast<int>(i);
                                 break;
@@ -621,13 +694,13 @@ namespace CampusSim {
                     }
                 }
 
-                // 鼠标移动：更新当前悬停的选项索引，用于高亮显示
+                // 鼠标移动：更新悬停项
                 if (event->is<sf::Event::MouseMoved>()) {
                     const auto* mv = event->getIf<sf::Event::MouseMoved>();
                     if (mv) {
                         sf::Vector2f worldPos = window.mapPixelToCoords(mv->position);
                         hoveredIndex = -1;
-                        for (std::size_t i = 0; i < choiceTexts.size(); ++i) {
+                        for (std::size_t i = 0; i < visibleChoiceIndices.size(); ++i) {
                             if (hitTestChoice(i, worldPos)) {
                                 hoveredIndex = static_cast<int>(i);
                                 break;
@@ -639,9 +712,9 @@ namespace CampusSim {
 
             // 处理选项
             if (chosenIndex >= 0 &&
-                static_cast<std::size_t>(chosenIndex) < currentScene->choices.size()) {
+                static_cast<std::size_t>(chosenIndex) < visibleChoiceIndices.size()) {
 
-                const Choice& choice = currentScene->choices[chosenIndex];
+                const Choice& choice = currentScene->choices[visibleChoiceIndices[chosenIndex]];
 
                 // 1. 改属性
                 game.stats.physique        += choice.dPhysique;
@@ -649,7 +722,7 @@ namespace CampusSim {
                 game.stats.network         += choice.dNetwork;
                 game.stats.reputation      += choice.dReputation;
                 game.stats.experience      += choice.dExperience;
-                game.stats.publicPractice  += choice.dPublicPractice;
+                game.stats.GongnengLecture += choice.dGongnengLecture;
                 game.stats.volunteer       += choice.dVolunteer;
                 game.stats.socialPractice  += choice.dSocialPractice;
 
@@ -663,7 +736,7 @@ namespace CampusSim {
                 game.stats.network         = clamp(game.stats.network);
                 game.stats.reputation      = clamp(game.stats.reputation);
                 game.stats.experience      = clamp(game.stats.experience);
-                game.stats.publicPractice  = clamp(game.stats.publicPractice);
+                game.stats.GongnengLecture = clamp(game.stats.GongnengLecture);
                 game.stats.volunteer       = clamp(game.stats.volunteer);
                 game.stats.socialPractice  = clamp(game.stats.socialPractice);
 
@@ -681,6 +754,7 @@ namespace CampusSim {
                     currentSceneId = targetId;
                     currentScene   = &it->second;
                     loadBackgroundForCurrentScene();
+                    resetChoiceTimers();
                     updateUI();
                 } else {
                     std::cerr << "找不到场景: " << targetId << "\n";
@@ -699,9 +773,7 @@ namespace CampusSim {
             window.draw(dialogBox);
             window.draw(dialogueText);
 
-            for (std::size_t i = 0; i < choiceTexts.size(); ++i) {
-                if (i >= currentScene->choices.size()) continue;
-
+            for (std::size_t i = 0; i < visibleChoiceIndices.size(); ++i) {
                 if (static_cast<int>(i) == hoveredIndex) {
                     // 悬停选项：变亮、加下划线，并在前面加一个小箭头 ">"
                     choiceTexts[i].setFillColor(sf::Color(255, 255, 200));
@@ -715,15 +787,15 @@ namespace CampusSim {
                     });
                     window.draw(arrow);
                 } else {
-                    // 非悬停：恢复默认颜色和样式
                     choiceTexts[i].setFillColor(sf::Color(230, 230, 210));
                     choiceTexts[i].setStyle(sf::Text::Regular);
                 }
 
                 window.draw(choiceTexts[i]);
             }
-            window.draw(statsBox);   // 先画左上角属性栏背景框
-            window.draw(statsText);  // 再画属性文字
+
+            window.draw(statsBox);
+            window.draw(statsText);
 
             window.display();
         }

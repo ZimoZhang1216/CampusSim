@@ -1,0 +1,12 @@
+ID: 1.2
+BG: assets/bg_start.png
+
+TEXT:
+第一个选择
+ENDTEXT
+
+CHOICE:
+普通|0|1.3|0|0
+普通|0|1.3|0|0
+特殊|0|1.3|flag,timed5|0
+ENDCHOICE
