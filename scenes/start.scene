@@ -6,5 +6,5 @@ TEXT:
 ENDTEXT
 
 CHOICE:
- START|1.1     |0      |0
+ START|0  |1.1     |0      |0
 ENDCHOICE
