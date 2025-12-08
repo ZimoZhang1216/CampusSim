@@ -11,6 +11,15 @@
 
 namespace CampusSim {
 
+    // 初始窗口逻辑分辨率（只作为启动大小，用于 VideoMode）
+    constexpr float INITIAL_WIDTH  = 1100.f;
+    constexpr float INITIAL_HEIGHT = 700.f;
+
+    // 背景中心微调偏移量：如果觉得画面偏上/偏下/偏左/偏右，可以在这里改
+    // 正方向：X 向右为正；Y 向下为正
+    constexpr float BG_CENTER_OFFSET_X = 0.f;
+    constexpr float BG_CENTER_OFFSET_Y = 0.f;
+
     // ----------------- 数据结构 -----------------
 
     struct Stats {
@@ -361,7 +370,7 @@ namespace CampusSim {
         return scenes;
     }
 
-    // 根据 flag 对“目标场景 ID”做重定向
+    // 根据 flag 对“目标场景 ID”做重定向（你可以自己扩展）
     std::string resolveSceneId(const std::string& rawId,
                                const std::map<std::string, bool>& flags) {
         if (rawId == "dorm_evening") {
@@ -379,10 +388,14 @@ namespace CampusSim {
 
     void run() {
         sf::RenderWindow window(
-            sf::VideoMode(sf::Vector2u{1100u, 700u}),
-            "Campus Simulator - New Script Format"
+            sf::VideoMode(sf::Vector2u{
+                static_cast<unsigned int>(INITIAL_WIDTH),
+                static_cast<unsigned int>(INITIAL_HEIGHT)
+            }),
+            "Campus Simulator"
         );
         window.setFramerateLimit(60);
+
 
         sf::Font font;
         if (!font.openFromFile("assets/NotoSansSC-Regular.otf")) {
@@ -422,18 +435,12 @@ namespace CampusSim {
         // 背景图
         sf::Texture backgroundTexture;
         bool hasBackground = false;
-        sf::Vector2f backgroundScale{1.f, 1.f};
 
         auto loadBackgroundForCurrentScene = [&]() {
             hasBackground = false;
             if (!currentScene->backgroundPath.empty()) {
                 if (backgroundTexture.loadFromFile(currentScene->backgroundPath)) {
                     hasBackground = true;
-                    auto size = backgroundTexture.getSize();
-                    backgroundScale = {
-                        static_cast<float>(window.getSize().x) / size.x,
-                        static_cast<float>(window.getSize().y) / size.y
-                    };
                 } else {
                     std::cerr << "无法加载背景图 " << currentScene->backgroundPath << "\n";
                 }
@@ -445,12 +452,7 @@ namespace CampusSim {
 
         // 对话框背景
         sf::RectangleShape dialogBox;
-        dialogBox.setSize({
-            static_cast<float>(window.getSize().x) - 80.f,
-            310.f
-        });
-        dialogBox.setPosition({40.f, 330.f});
-        dialogBox.setFillColor(sf::Color(0, 0, 80, 200));
+        dialogBox.setFillColor(sf::Color(0, 0, 150, 230));  // 更明显的深蓝色，方便观察
 
         // 对话文字
         sf::Text dialogueText(font, "", 20);
@@ -469,7 +471,6 @@ namespace CampusSim {
         // 属性显示（左上角）
         sf::Text statsText(font, "", 18);
         statsText.setFillColor(sf::Color::Yellow);
-        statsText.setPosition(sf::Vector2f{40.f, 40.f});
 
         // 属性栏背景框（左上角）
         sf::RectangleShape statsBox;
@@ -477,8 +478,15 @@ namespace CampusSim {
         statsBox.setOutlineColor(sf::Color(255, 255, 255, 220));
         statsBox.setOutlineThickness(3.f);
 
+        // UI 更新函数：根据当前窗口大小重新布局
         auto updateUI = [&]() {
-            // ---- 文本和选项布局 ----
+            // 用当前视图尺寸做布局，避免 HiDPI 或视图缩放导致的坐标偏移
+            const sf::View& view = window.getView();
+            sf::Vector2f viewSize = view.getSize();
+            float winW = viewSize.x;
+            float winH = viewSize.y;
+            if (winW <= 0.f || winH <= 0.f) return;
+
             const std::string& d = currentScene->dialogue;
             sf::String dlg = sf::String::fromUtf8(d.begin(), d.end());
 
@@ -489,8 +497,8 @@ namespace CampusSim {
             float gapTextToChoice     = 20.f;
             float choiceLineSpacing   = 12.f;
 
-            float dialogWidth = static_cast<float>(window.getSize().x)
-                                - dialogPaddingLeft - dialogPaddingRight;
+            float dialogWidth = winW - dialogPaddingLeft - dialogPaddingRight;
+            if (dialogWidth < 200.f) dialogWidth = 200.f;
             float dialogMaxWidth = dialogWidth - 40.f;
 
             sf::String wrappedDlg = wrapTextToWidth(
@@ -567,30 +575,34 @@ namespace CampusSim {
                 totalChoiceHeight -= choiceLineSpacing;
             }
 
-            // 3) 计算对话框高度，贴近底部
+            // 3) 计算对话框高度，固定在底部，大小自适应内容
             float dialogHeight = dialogPaddingTop + dlgHeight;
             if (totalChoiceHeight > 0.f) {
                 dialogHeight += gapTextToChoice + totalChoiceHeight;
             }
             dialogHeight += dialogPaddingBottom;
 
-            float minDialogHeight = 60.f;
+            // 限制高度范围，防止过小或占满全屏
+            float minDialogHeight = 120.f;
             if (dialogHeight < minDialogHeight) dialogHeight = minDialogHeight;
-            float maxDialogHeight = static_cast<float>(window.getSize().y) * 0.6f;
+            float maxDialogHeight = winH * 0.6f;
             if (dialogHeight > maxDialogHeight) dialogHeight = maxDialogHeight;
 
+            // 对话框贴近底部，预留一点下边距
+            float bottomMargin = 30.f;
             float dialogX = dialogPaddingLeft;
-            float dialogY = static_cast<float>(window.getSize().y) - dialogHeight - 40.f;
+            float dialogY = winH - dialogHeight - bottomMargin;
 
             dialogBox.setPosition({dialogX, dialogY});
             dialogBox.setSize({dialogWidth, dialogHeight});
 
-            // 对话文本位置
+            // 对话文本位置：相对框顶的固定内边距
             dialogueText.setPosition({dialogX + 20.f, dialogY + dialogPaddingTop});
 
+            // 选项排版：在对话文本下方开始，和内容保持间距
             float currentY = dialogueText.getPosition().y + dlgHeight
                              + (totalChoiceHeight > 0.f ? gapTextToChoice : 0.f);
-            float choiceX = dialogX + 40.f;
+            float choiceX  = dialogX + 40.f;
 
             for (std::size_t i = 0; i < choiceTexts.size(); ++i) {
                 if (i < visibleChoiceIndices.size()) {
@@ -614,7 +626,8 @@ namespace CampusSim {
             statsText.setPosition(sf::Vector2f{30.f, 40.f});
 
             statsBox.setPosition(sf::Vector2f{20.f, 20.f});
-            statsBox.setSize({1060.f, 70.f});
+            statsBox.setSize({winW - 40.f, 70.f});
+
         };
 
         // 统一的选项命中检测
@@ -649,16 +662,37 @@ namespace CampusSim {
                 }
             }
 
-            // 根据最新的 remainingTime + flags 更新界面
-            updateUI();
-
+            // 先处理事件（包括窗口大小变化）
             int chosenIndex = -1;
 
-            // 事件处理循环（SFML 3 风格）
             while (true) {
                 auto event = window.pollEvent();
                 if (!event) {
                     break;
+                }
+
+                // 窗口大小改变：更新视图和布局
+                if (event->is<sf::Event::Resized>()) {
+                    const auto* rs = event->getIf<sf::Event::Resized>();
+                    if (rs) {
+                        // 保持“世界坐标 == 像素坐标”，防止窗口缩放后视图仍用旧尺寸导致居中偏移
+                        sf::View view(sf::FloatRect(
+                            sf::Vector2f{0.f, 0.f},
+                            sf::Vector2f{
+                                static_cast<float>(rs->size.x),
+                                static_cast<float>(rs->size.y)
+                            }
+                        ));
+                        sf::Vector2f viewSize = view.getSize();
+                        view.setCenter(sf::Vector2f{
+                            viewSize.x * 0.5f,
+                            viewSize.y * 0.5f
+                        });
+                        window.setView(view);
+
+                        loadBackgroundForCurrentScene();
+                        updateUI();
+                    }
                 }
 
                 if (event->is<sf::Event::Closed>()) {
@@ -710,6 +744,9 @@ namespace CampusSim {
                 }
             }
 
+            // 然后根据最新窗口大小再更新一遍 UI（防止尺寸变化但没有事件时）
+            updateUI();
+
             // 处理选项
             if (chosenIndex >= 0 &&
                 static_cast<std::size_t>(chosenIndex) < visibleChoiceIndices.size()) {
@@ -755,6 +792,7 @@ namespace CampusSim {
                     currentScene   = &it->second;
                     loadBackgroundForCurrentScene();
                     resetChoiceTimers();
+                    hoveredIndex = -1;
                     updateUI();
                 } else {
                     std::cerr << "找不到场景: " << targetId << "\n";
@@ -764,12 +802,43 @@ namespace CampusSim {
             // 绘制
             window.clear(sf::Color(20, 20, 40));
 
+            // 1) 背景：强制等比缩放 + 完整显示 + 严格居中（可能留黑边）
             if (hasBackground) {
+                const sf::View& view = window.getView();
+                sf::Vector2f viewCenter = view.getCenter();
+                sf::Vector2f viewSize = view.getSize();
+                float winW = viewSize.x;
+                float winH = viewSize.y;
+
                 sf::Sprite bg(backgroundTexture);
-                bg.setScale(backgroundScale);
+                auto texSize = backgroundTexture.getSize();
+                float texW = static_cast<float>(texSize.x);
+                float texH = static_cast<float>(texSize.y);
+
+                if (texW > 0.f && texH > 0.f) {
+                    // 将原点设置为纹理中心，方便以中心为基准缩放/居中
+                    bg.setOrigin(sf::Vector2f{texW * 0.5f, texH * 0.5f});
+
+                    // 计算两个缩放比例
+                    float scaleX = winW / texW;
+                    float scaleY = winH / texH;
+                    // 取较小值，保证整张背景图完全显示，不被裁剪（可能留黑边）
+                    float scale  = std::min(scaleX, scaleY);
+
+                    // 设置等比缩放（SFML 3：使用 Vector2f）
+                    bg.setScale(sf::Vector2f{scale, scale});
+
+                    // 直接把 sprite 放在窗口中心，再加上可调偏移量
+                    bg.setPosition(sf::Vector2f{
+                        viewCenter.x + BG_CENTER_OFFSET_X,
+                        viewCenter.y + BG_CENTER_OFFSET_Y
+                    });
+                }
+
                 window.draw(bg);
             }
 
+            // 2) 对话框 + 文本 + 选项
             window.draw(dialogBox);
             window.draw(dialogueText);
 
@@ -794,6 +863,7 @@ namespace CampusSim {
                 window.draw(choiceTexts[i]);
             }
 
+            // 3) 属性栏
             window.draw(statsBox);
             window.draw(statsText);
 
@@ -804,6 +874,7 @@ namespace CampusSim {
 } // namespace CampusSim
 
 int main() {
+    std::cout << "这是最新版本CampusSim" << std::endl;
     CampusSim::run();
     return 0;
 }

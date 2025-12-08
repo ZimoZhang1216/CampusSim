@@ -6,8 +6,11 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/CampusSim",
+            "args": [],
+            "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
-            "preLaunchTask": "build with cmake",
+            "environment": [],
+            "console": "integratedTerminal",
             "MIMode": "lldb"
         }
     ]
