@@ -1,0 +1,11 @@
+ID:2.1.1.2.2
+BG: assets/start.png
+
+TEXT:
+团委：下设部门超多，包括组织部、宣传部等。
+ENDTEXT
+
+CHOICE:
+就它了       |0      |2.1.2     |0        |0
+再想想       |0      |2.1.1     |0        |0
+ENDCHOICE
