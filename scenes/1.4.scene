@@ -1,0 +1,11 @@
+ID: 1.4
+BG: assets/bg_start.png
+
+TEXT:
+突发！导员在群里发了军训政工组招新，要有推送经验，需要面试，但据学长学姐说参加后不需要军训了
+ENDTEXT
+
+CHOICE:
+报！我不要军训      | 0         |2.1    |0    | 0
+不报，我不擅长摄影剪视频且不想面试TAT     | 0      | 2.1    | ZhengGong           | 0
+ENDCHOICE
