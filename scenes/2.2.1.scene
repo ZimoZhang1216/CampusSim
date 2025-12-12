@@ -1,0 +1,12 @@
+ID: 2.2.1
+BG: assets/start.png
+
+TEXT:
+你要报：
+ENDTEXT
+
+CHOICE:
+伯苓班                                      | 0          | 3.0          | BoLing              | 0
+特色班                                      | 0          | 3.0          | TeSe                 | 0
+小语种双学位（学籍转入外院）   | 0          | 3.0          | XiaoYuZhong      | 0
+ENDCHOICE

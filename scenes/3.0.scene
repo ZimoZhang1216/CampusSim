@@ -1,0 +1,14 @@
+ID: 3.0
+BG: assets/start.png
+
+TEXT:
+军训即将开始，你：
+ENDTEXT
+
+CHOICE:
+报名了政工组，不用军训，嘻嘻                                                               | 0            | 3.1           | 0               | ZhengGong
+自信满满参加训练                                                                                | 0            | 3.2    | 0                   | NoZhengGong
+哎呀身体怎么虚虚的，在旁边跟训吧                                                      | 0            | 4.1       | 0     | NoZhengGong
+今年我的身体条件确实不行，申请缓训吧                                              | 0                | 4.1     | 0         | NoZhengGong
+我有先天疾病/永久性创伤/做过大手术/军训的话我有噶掉的风险，只能免训了             | 0                | 4.1     | 0         | NoZhengGong
+ENDCHOICE
