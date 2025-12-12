@@ -6,6 +6,6 @@ TEXT:
 ENDTEXT
 
 CHOICE:
-报！我不要军训      | 0         |2.1    |0    | 0
+报！我不要军训      | 0         |2.1    |NoZhengGong    | 0
 不报，我不擅长摄影剪视频且不想面试TAT     | 0      | 2.1    | ZhengGong           | 0
 ENDCHOICE
