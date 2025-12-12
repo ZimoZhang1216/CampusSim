@@ -1,0 +1,11 @@
+ID: 3.6.1
+BG: assets/start.png
+
+TEXT:
+是校医院的志愿者群，要扫码进群吗：
+ENDTEXT
+
+CHOICE:
+进   | 0         | 3.7   | jinxiaoyiyuan   | 0
+不进     | 0      | 3.7    | 0            | 0
+ENDCHOICE

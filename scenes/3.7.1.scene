@@ -1,0 +1,10 @@
+ID: example
+BG: assets/start.png
+
+TEXT:
+恭喜你喜提一周三次的早六训练，和周末三小时的大训，不过在这里你也收获了许多宝贵的友情和俯卧撑
+ENDTEXT
+
+CHOICE:
+军训完美收官 学业正式启动   |  体质=+2 ,san=-1   | 4.1  | 0    | 0
+ENDCHOICE

@@ -1,0 +1,11 @@
+ID: 3.5
+BG: assets/start.png
+
+TEXT:
+班委竞选开始了，你要报名吗：
+ENDTEXT
+
+CHOICE:
+报       | 0       | 3.5.1   | 0   | 0
+不报    | 0      | 3.6    | 0            | 0
+ENDCHOICE

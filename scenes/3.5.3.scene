@@ -1,0 +1,11 @@
+ID: 3.5.3
+BG: assets/start.png
+
+TEXT:
+竞选当天，你：
+ENDTEXT
+
+CHOICE:
+好紧张好紧张   | 0         | 3.5.4   | jinzhang   | 0
+无感     | 0      | 3.5.4    | wugan            | 0
+ENDCHOICE

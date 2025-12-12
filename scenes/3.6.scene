@@ -1,0 +1,11 @@
+ID: 3.6
+BG: assets/start.png
+
+TEXT:
+新生入学体检，出口处有个大大的二维码：
+ENDTEXT
+
+CHOICE:
+去看看   | 0         | 3.6.1   | 0   | 0
+不感兴趣     | 0      | 3.7    | 0            | 0
+ENDCHOICE

@@ -1,0 +1,10 @@
+ID: 3.3.1
+BG: assets/start.png
+
+TEXT:
+恭喜你赌赢了！
+ENDTEXT
+
+CHOICE:
+获得成就：你赌过课吗   | 学力=+1         | 3.4   | 0   | 0
+ENDCHOICE

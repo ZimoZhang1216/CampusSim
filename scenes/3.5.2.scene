@@ -1,0 +1,12 @@
+ID: 3.5.2
+BG: assets/start.png
+
+TEXT:
+关于竞选的职位，你：
+ENDTEXT
+
+CHOICE:
+经验丰富，经常做相关工作，例子一抓一大把      | 0        | 3.5.3   | jingyanfengfu   | 0
+担任过，但老师没给我派过活        | 0      | 3.5.3    |  moyu            | 0
+没做过，但大学我想锻炼一下自己      | 0    | 3.5.3     | shayemeiyou  | 0
+ENDCHOICE

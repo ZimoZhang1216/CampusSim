@@ -1,0 +1,13 @@
+ID:3.5.4
+BG: assets/start.png
+
+TEXT:
+最后结果是……
+ENDTEXT
+
+CHOICE:
+恭喜你竞选成功，当班委可以加综测哦   | 0         | 3.6   | 0  | jingyanfengfu
+恭喜你竞选成功，当班委可以加综测哦     | 0      | 3.6    | 0   | moyu , wugan
+竞选失败，遗憾离场              | 0    | 3.6     | 0       | shayemeiyou
+竞选失败，遗憾离场              | 0      | 3.6    | 0       | moyu , jinzhang
+ENDCHOICE
