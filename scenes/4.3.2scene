@@ -1,0 +1,11 @@
+ID:4.3.2
+BG: assets/start.png
+
+TEXT:
+班级消息：运动会开幕式需要同学当观众，计入公能实践，名额有限先到先得：
+ENDTEXT
+
+CHOICE:
+报！ |社会实践=+2       | 4.4   | timed10           | 0
+不报 |0       | 4.4   | 0            | 0
+ENDCHOICE

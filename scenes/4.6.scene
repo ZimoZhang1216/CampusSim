@@ -1,0 +1,11 @@
+ID:4.6
+BG: assets/start.png
+
+TEXT:
+最近天气不错，但是好多乱七八糟的事，天天睡不醒，我要：
+ENDTEXT
+
+CHOICE:
+报|0       | 4.6.1   | 0            | 0
+不报|0       | 4.8   | 0            | 0
+ENDCHOICE

@@ -1,0 +1,10 @@
+ID:4.7.1.1
+BG: assets/start.png
+
+TEXT:
+你放下手机重新抬起头——丸辣！黑板上写的是什么？！
+老师，what are you saying??我怎么听不懂......
+ENDTEXT
+继续|0       | 4.8   | 0            | 0
+CHOICE:
+ENDCHOICE

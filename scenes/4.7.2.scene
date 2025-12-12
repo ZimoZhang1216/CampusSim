@@ -1,0 +1,9 @@
+ID:4.7.2
+BG: assets/start.png
+
+TEXT:
+真是不小心，你错过了普通话考试的报名
+
+CHOICE:
+继续|0       | 4.8   | 0            | 0
+ENDCHOICE

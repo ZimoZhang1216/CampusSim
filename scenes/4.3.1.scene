@@ -1,0 +1,10 @@
+ID:4.3.1
+BG: assets/start.png
+
+TEXT:
+班级消息：运动会开幕式需要同学当观众，计入公能实践，名额有限先到先得：
+ENDTEXT
+
+CHOICE:
+大意了方阵报早了 |0       | 4.4 | 0           | 0
+ENDCHOICE
