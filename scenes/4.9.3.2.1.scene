@@ -1,0 +1,9 @@
+ID:4.9.3.2.1
+BG: assets/start.png
+
+TEXT:
+四级比你想象的难，久别英语的你早已不是对手
+你，轻敌了
+CHOICE
+继续|0     | 4.10   | 0            | 0
+ENDCHOICE

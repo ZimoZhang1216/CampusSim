@@ -1,0 +1,8 @@
+ID:4.9.2
+BG: assets/start.png
+
+TEXT:
+晚上你来创高，寒风刺骨，没两圈就把你劝退了
+CHOICE:
+继续|0       | 4.9.3   | 0            | 0
+ENDCHOICE

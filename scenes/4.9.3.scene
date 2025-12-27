@@ -1,0 +1,10 @@
+ID:4.9.3
+BG: assets/start.png
+
+TEXT:
+马上要四级考试了
+CHOICE:
+ohno！之前没刷题！|0     | 4.9.3.2   | 0            | meizhunbei
+幸亏之前准备了～|0       | 4.9.3.1   |     0   | zhunbei
+你没报名，一切与你无关|0       | 4.10   |     0   | meibaoming
+ENDCHOICE

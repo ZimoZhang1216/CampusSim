@@ -1,0 +1,8 @@
+ID:4.9.3.1
+BG: assets/start.png
+
+TEXT:
+小小四级轻松拿捏
+CHOICE:
+继续|0     | 4.10   | 0            | 0
+ENDCHOICE

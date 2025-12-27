@@ -1,0 +1,8 @@
+ID:4.9.1
+BG: assets/start.png
+
+TEXT:
+下午上课你巨困无比，学习效率大大下降
+CHOICE:
+继续|xueli=-1       | 4.9.3   | 0            | 0
+ENDCHOICE
