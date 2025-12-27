@@ -764,8 +764,8 @@ namespace CampusSim {
                 game.stats.socialPractice  += choice.dSocialPractice;
 
                 auto clamp = [](int v) {
-                    if (v < 0) return 0;
-                    if (v > 10) return 10;
+                    if (v < -100) return -100;
+                    if (v > 100) return 100;
                     return v;
                 };
                 game.stats.physique        = clamp(game.stats.physique);
