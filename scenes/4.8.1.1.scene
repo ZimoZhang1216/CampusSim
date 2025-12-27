@@ -1,0 +1,8 @@
+ID:4.8.1.1
+BG: assets/start.png
+
+TEXT:
+不行哟，要刷不完课了
+CHOICE:
+继续|0       | 4.8.2   | 0            | 0
+ENDCHOICE

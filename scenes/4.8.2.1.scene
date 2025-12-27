@@ -1,0 +1,9 @@
+ID:4.8.2.1
+BG: assets/start.png
+
+TEXT:
+飞书消息：校医院文件整理，记3小时志愿时长：
+CHOICE:
+填报（手慢无）|zhiyuanfuwu=+3       | 4.8.2.1.1   | timed5            | 0
+没空，不去|0       | 4.8.2   | 0            | 0
+ENDCHOICE

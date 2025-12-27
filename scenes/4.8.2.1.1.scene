@@ -1,0 +1,8 @@
+ID:4.8.2.1.1
+BG: assets/start.png
+
+TEXT:
+半个小时的工作水了三小时时长，好志愿
+CHOICE:
+继续|0       | 4.8.2   | 0            | 0
+ENDCHOICE

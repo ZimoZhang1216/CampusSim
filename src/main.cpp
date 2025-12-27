@@ -15,6 +15,14 @@ namespace CampusSim {
     constexpr float INITIAL_WIDTH  = 1100.f;
     constexpr float INITIAL_HEIGHT = 700.f;
 
+    //上下限
+#ifndef STAT_MAX_VALUE
+    constexpr int STAT_MAX = 100;
+#else
+    constexpr int STAT_MAX = STAT_MAX_VALUE;
+#endif
+    constexpr int STAT_MIN = -100;
+
     // 背景中心微调偏移量：如果觉得画面偏上/偏下/偏左/偏右，可以在这里改
     // 正方向：X 向右为正；Y 向下为正
     constexpr float BG_CENTER_OFFSET_X = 0.f;
@@ -28,6 +36,7 @@ namespace CampusSim {
         int network         = 0;  // 人脉
         int reputation      = 0;  // 名誉
         int experience      = 0;  // 经验
+        int san             = 0;  // 理智
         int GongnengLecture = 0;  // 公能讲座
         int volunteer       = 0;  // 志愿服务
         int socialPractice  = 0;  // 社会实践
@@ -45,6 +54,7 @@ namespace CampusSim {
         int dNetwork         = 0;           // 人脉 变化
         int dReputation      = 0;           // 名誉 变化
         int dExperience      = 0;           // 经验 变化
+        int dSan             = 0;           // 理智 变化
         int dGongnengLecture = 0;           // 公能讲座 变化
         int dVolunteer       = 0;           // 志愿服务 变化
         int dSocialPractice  = 0;           // 社会实践 变化
@@ -120,6 +130,8 @@ namespace CampusSim {
                 choice.dReputation += value;
             } else if (key == "experience" || key == "经验" || key == "J") {
                 choice.dExperience += value;
+            } else if (key == "san" || key == "理智") {
+                choice.dSan += value;
             } else if (key == "public" || key == "公能讲座" || key == "G") {
                 choice.dGongnengLecture += value;
             } else if (key == "volunteer" || key == "志愿服务" || key == "Z") {
@@ -618,6 +630,7 @@ namespace CampusSim {
                 "   人脉: "     + std::to_string(game.stats.network) +
                 "   名誉: "     + std::to_string(game.stats.reputation) +
                 "   经验: "     + std::to_string(game.stats.experience) +
+                "   理智: "     + std::to_string(game.stats.san) +
                 "\n公能讲座: "  + std::to_string(game.stats.GongnengLecture) +
                 "   志愿服务: " + std::to_string(game.stats.volunteer) +
                 "   社会实践: " + std::to_string(game.stats.socialPractice);
@@ -764,8 +777,8 @@ namespace CampusSim {
                 game.stats.socialPractice  += choice.dSocialPractice;
 
                 auto clamp = [](int v) {
-                    if (v < -100) return -100;
-                    if (v > 100) return 100;
+                    if (v < STAT_MIN) return STAT_MIN;
+                    if (v > STAT_MAX) return STAT_MAX;
                     return v;
                 };
                 game.stats.physique        = clamp(game.stats.physique);
@@ -773,6 +786,7 @@ namespace CampusSim {
                 game.stats.network         = clamp(game.stats.network);
                 game.stats.reputation      = clamp(game.stats.reputation);
                 game.stats.experience      = clamp(game.stats.experience);
+                game.stats.san             = clamp(game.stats.san);
                 game.stats.GongnengLecture = clamp(game.stats.GongnengLecture);
                 game.stats.volunteer       = clamp(game.stats.volunteer);
                 game.stats.socialPractice  = clamp(game.stats.socialPractice);
